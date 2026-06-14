@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MYLION — Inventario de iPhones</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── VARIABLES ── */
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --card: #18181f;
+  --border: #2a2a38;
+  --accent: #c9a84c;      /* gold – lion brand */
+  --accent2: #e8c96b;
+  --accentGlow: rgba(201,168,76,0.15);
+  --warn: #ff6b35;
+  --text: #e8e8f0;
+  --muted: #7070a0;
+  --green: #00e5a0;
+  --red: #ff4466;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* ── NAV ── */
+nav{display:flex;justify-content:space-between;align-items:center;padding:14px 36px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,15,0.97);backdrop-filter:blur(20px);z-index:200;}
+.logo-wrap{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-icon{width:38px;height:38px;}
+.logo-text{font-size:1.5rem;font-weight:800;letter-spacing:0.04em;color:var(--accent);}
+.nav-actions{display:flex;gap:8px;align-items:center;}
+.nav-tab{padding:8px 16px;border-radius:7px;border:none;background:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.02em;}
+.nav-tab:hover{color:var(--text);background:var(--card);}
+.nav-tab.active{color:var(--accent);background:var(--accentGlow);}
+.btn-login{padding:8px 18px;border-radius:7px;border:1px solid var(--accent);background:none;color:var(--accent);font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-login:hover{background:var(--accent);color:#000;}
+.admin-badge{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--muted);}
+.admin-badge strong{color:var(--accent);}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border-radius:8px;font-size:0.84rem;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;border:none;letter-spacing:.02em;transition:all .2s;}
+.btn-gold{background:var(--accent);color:#000;}
+.btn-gold:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:rgba(255,68,102,.12);color:var(--red);border:1px solid rgba(255,68,102,.25);}
+.btn-danger:hover{background:rgba(255,68,102,.22);}
+.btn-green{background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.25);}
+.btn-green:hover{background:rgba(0,229,160,.22);}
+.btn-sm{padding:6px 13px;font-size:0.77rem;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── PAGES ── */
+.page{display:none;}.page.active{display:block;}
+
+/* ── METRICS BAR ── */
+.metrics-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.metric{background:var(--surface);padding:24px 28px;position:relative;overflow:hidden;}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);transform:scaleX(0);transition:transform .3s;transform-origin:left;}
+.metric:hover::after{transform:scaleX(1);}
+.metric-label{font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.metric-value{font-family:'DM Mono',monospace;font-size:1.75rem;font-weight:500;color:var(--text);}
+.metric-value.gold{color:var(--accent);}
+.metric-value.green{color:var(--green);}
+.metric-sub{font-size:.73rem;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace;}
+
+/* ── DASHBOARD GRID ── */
+.main-pad{padding:36px 40px;max-width:1420px;margin:0 auto;}
+.section-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.section-title span{color:var(--muted);font-size:.85rem;font-weight:400;}
+.devices-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px;}
+
+/* ── DEVICE CARD ── */
+.device-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .25s;cursor:pointer;}
+.device-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 12px 40px rgba(201,168,76,.12);}
+.card-carousel{position:relative;height:190px;background:#0d0d14;overflow:hidden;}
+.card-carousel img{width:100%;height:100%;object-fit:cover;transition:opacity .3s;}
+.card-carousel .no-photo{display:flex;align-items:center;justify-content:center;height:100%;font-size:3.5rem;opacity:.18;}
+.carousel-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;}
+.cdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:background .2s;}
+.cdot.active{background:var(--accent);}
+.carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;}
+.card-carousel:hover .carousel-arrow{opacity:1;}
+.carousel-arrow.left{left:8px;}
+.carousel-arrow.right{right:8px;}
+.card-body{padding:16px;}
+.card-model{font-size:.95rem;font-weight:700;margin-bottom:3px;}
+.card-specs{font-size:.78rem;color:var(--muted);margin-bottom:10px;}
+.card-price{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:500;color:var(--accent);margin-bottom:12px;}
+.card-actions{display:flex;gap:7px;flex-wrap:wrap;}
+.card-badge{display:inline-block;font-size:.68rem;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(201,168,76,.3);color:var(--accent);background:rgba(201,168,76,.08);margin-bottom:8px;}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;width:640px;max-width:100%;max-height:92vh;overflow-y:auto;animation:slideUp .25s ease;}
+.modal.wide{width:820px;}
+.modal.narrow{width:460px;}
+@keyframes slideUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.modal-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+.span2{grid-column:span 2;}
+.span3{grid-column:span 3;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:8px;font-size:.87rem;font-family:'Syne',sans-serif;outline:none;transition:border-color .2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:65px;}
+.fg .hint{font-size:.71rem;color:var(--muted);}
+.fg input[type=file]{padding:7px 10px;cursor:pointer;}
+
+/* ── PHOTO UPLOAD PREVIEW ── */
+.photo-preview-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.photo-thumb{width:70px;height:70px;object-fit:cover;border-radius:7px;border:1px solid var(--border);}
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--muted);font-size:.82rem;cursor:pointer;transition:all .2s;position:relative;}
+.upload-zone:hover{border-color:var(--accent);color:var(--accent);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+
+/* ── HISTORY TABLE ── */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto;}
+table{width:100%;border-collapse:collapse;min-width:700px;}
+thead tr{background:var(--surface);border-bottom:1px solid var(--border);}
+th{padding:12px 14px;text-align:left;font-size:.67rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(42,42,56,.5);transition:background .15s;}
+tbody tr:hover{background:rgba(255,255,255,.025);}
+tbody tr:last-child{border-bottom:none;}
+td{padding:13px 14px;font-size:.84rem;}
+.mono{font-family:'DM Mono',monospace;}
+.chip{font-size:.68rem;font-weight:600;padding:3px 9px;border-radius:20px;}
+.chip-disp{background:rgba(0,229,160,.1);color:var(--green);}
+.chip-vend{background:rgba(255,68,102,.1);color:var(--red);}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:22px;flex-wrap:wrap;}
+.search-box{flex:1;min-width:220px;position:relative;}
+.search-box input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 14px 10px 40px;border-radius:8px;font-size:.87rem;font-family:'Syne',sans-serif;outline:none;transition:border-color .2s;}
+.search-box input:focus{border-color:var(--accent);}
+.search-box::before{content:'⌕';position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;}
+.filter-sel{background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:8px;font-size:.84rem;font-family:'Syne',sans-serif;outline:none;cursor:pointer;}
+.filter-sel:focus{border-color:var(--accent);}
+
+/* ── PHOTO MODAL ── */
+.photo-modal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
+.photo-modal-item{position:relative;border-radius:10px;overflow:hidden;}
+.photo-modal-item img{width:100%;height:170px;object-fit:cover;display:block;}
+.photo-modal-item .dl-btn{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:none;color:#fff;padding:5px 10px;border-radius:6px;font-size:.73rem;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;}
+.photo-modal-item .dl-btn:hover{background:var(--accent);color:#000;}
+
+/* ── RECEIPT ── */
+.receipt-body{font-family:'Syne',sans-serif;padding:0;}
+#receipt-content{background:#fff;color:#111;padding:36px;border-radius:8px;max-width:600px;margin:0 auto;}
+#receipt-content h1{font-size:1.4rem;font-weight:800;margin-bottom:4px;}
+#receipt-content .sub{color:#555;font-size:.82rem;margin-bottom:20px;}
+#receipt-content .divider{border:none;border-top:1px solid #ddd;margin:16px 0;}
+#receipt-content .row{display:flex;justify-content:space-between;padding:5px 0;font-size:.88rem;}
+#receipt-content .row .k{color:#666;}
+#receipt-content .row .v{font-weight:600;}
+#receipt-content .total-row{display:flex;justify-content:space-between;padding:10px 0;font-size:1.05rem;font-weight:700;border-top:2px solid #111;margin-top:8px;}
+#receipt-content .thanks{margin-top:20px;padding:14px;background:#f9f5e7;border-radius:8px;font-size:.82rem;color:#555;text-align:center;}
+#receipt-content .logo-receipt{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+#receipt-content .logo-receipt span{font-size:1.6rem;font-weight:800;letter-spacing:.04em;color:#b8860b;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--accent);color:#000;padding:12px 20px;border-radius:8px;font-weight:600;font-size:.84rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;max-width:340px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.err{background:var(--red);color:#fff;}
+
+/* ── LOGIN MODAL ── */
+.login-box{text-align:center;}
+.login-box .lion-icon{font-size:3.5rem;margin-bottom:12px;}
+.login-box h2{font-size:1.2rem;font-weight:700;margin-bottom:6px;}
+.login-box p{color:var(--muted);font-size:.84rem;margin-bottom:24px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .icon{font-size:3rem;margin-bottom:12px;opacity:.25;}
+
+/* ── IMEI BADGE ── */
+.imei-badge{font-family:'DM Mono',monospace;font-size:.72rem;background:rgba(107,92,231,.12);color:#a09cf0;padding:2px 8px;border-radius:4px;border:1px solid rgba(107,92,231,.25);}
+
+/* ── PRINT ── */
+@media print{
+  body>*:not(#print-area){display:none!important;}
+  #print-area{display:block!important;}
+}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:18px 40px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.76rem;font-family:'DM Mono',monospace;margin-top:60px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  nav{padding:12px 16px;}
+  .main-pad{padding:20px 16px;}
+  .metrics-bar{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-grid .span2,.form-grid .span3{grid-column:span 1;}
+  footer{flex-direction:column;gap:6px;text-align:center;}
+}
+@media(max-width:480px){
+  .metrics-bar{grid-template-columns:1fr;}
+  .logo-text{font-size:1.2rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════ -->
+<nav>
+  <a class="logo-wrap" href="#" onclick="showPage('dashboard')">
+    <!-- Lion SVG Logo (inline) -->
+    <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 10C45 10 38 14 35 20L30 18C28 22 30 27 33 28L31 35C28 40 28 46 30 50C25 52 22 57 23 63C24 68 28 71 32 72L33 80C34 86 39 90 45 91H55C61 90 66 86 67 80L68 72C72 71 76 68 77 63C78 57 75 52 70 50C72 46 72 40 69 35L67 28C70 27 72 22 70 18L65 20C62 14 55 10 50 10Z" stroke="#c9a84c" stroke-width="3.5" fill="none"/>
+      <path d="M38 55C38 55 42 59 50 59C58 59 62 55 62 55" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="40" cy="47" r="3.5" fill="#c9a84c"/>
+      <circle cx="60" cy="47" r="3.5" fill="#c9a84c"/>
+      <path d="M33 28C28 25 24 20 27 15" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M67 28C72 25 76 20 73 15" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M30 18C26 17 23 13 26 9" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
+      <path d="M70 18C74 17 77 13 74 9" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">MYLION</span>
+  </a>
+  <div class="nav-actions">
+    <button class="nav-tab active" id="nav-dash" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" id="nav-hist" onclick="showPage('historial')" style="display:none">Historial</button>
+    <div id="auth-area">
+      <button class="btn-login" onclick="openLogin()">🔐 Admin</button>
+    </div>
+    <div id="admin-area" style="display:none">
+      <span class="admin-badge">👤 <strong id="admin-name-label"></strong></span>
+      <button class="btn-login" style="margin-left:10px;border-color:var(--muted);color:var(--muted);" onclick="logout()">Salir</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: DASHBOARD (público)
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <!-- Metrics -->
+  <div class="metrics-bar">
+    <div class="metric">
+      <div class="metric-label">Disponibles</div>
+      <div class="metric-value gold" id="m-stock">0</div>
+      <div class="metric-sub">equipos en stock</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Vendidos</div>
+      <div class="metric-value" id="m-vendidos">0</div>
+      <div class="metric-sub">unidades totales</div>
+    </div>
+    <div class="metric" id="m-admin-1" style="display:none">
+      <div class="metric-label">Ingresos Ventas</div>
+      <div class="metric-value green" id="m-ingresos">$0</div>
+      <div class="metric-sub">total acumulado</div>
+    </div>
+    <div class="metric" id="m-admin-2" style="display:none">
+      <div class="metric-label">Utilidad Bruta</div>
+      <div class="metric-value green" id="m-utilidad">$0</div>
+      <div class="metric-sub" id="m-margen">0% margen</div>
+    </div>
+    <div class="metric" id="m-public-3">
+      <div class="metric-label">Modelos</div>
+      <div class="metric-value" id="m-modelos">0</div>
+      <div class="metric-sub">referencias distintas</div>
+    </div>
+    <div class="metric" id="m-public-4">
+      <div class="metric-label">Actualizado</div>
+      <div class="metric-value" style="font-size:1rem;padding-top:6px" id="m-fecha">–</div>
+      <div class="metric-sub">última operación</div>
+    </div>
+  </div>
+
+  <div class="main-pad">
+    <!-- Admin actions bar -->
+    <div id="admin-actions-bar" style="display:none;margin-bottom:28px;">
+      <button class="btn btn-gold" onclick="openCompraModal()">📥 Registrar Compra</button>
+      <button class="btn btn-outline" style="margin-left:10px" onclick="exportCSV()">📤 Exportar CSV</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="dash-search" placeholder="Buscar modelo, color, IMEI…" oninput="renderDashboard()">
+      </div>
+      <select class="filter-sel" id="dash-filter-modelo" onchange="renderDashboard()">
+        <option value="">Todos los modelos</option>
+      </select>
+      <select class="filter-sel" id="dash-filter-cap" onchange="renderDashboard()">
+        <option value="">Toda capacidad</option>
+        <option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option>
+      </select>
+    </div>
+
+    <div class="section-title">📱 Inventario Disponible <span id="dash-count-label"></span></div>
+    <div class="devices-grid" id="devices-grid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: HISTORIAL (solo admin)
+══════════════════════════════════════════════ -->
+<div class="page" id="page-historial">
+  <div class="main-pad">
+    <div class="section-title" style="margin-bottom:24px">📋 Historial Completo</div>
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="hist-search" placeholder="Buscar…" oninput="renderHistorial()">
+      </div>
+      <select class="filter-sel" id="hist-filter-estado" onchange="renderHistorial()">
+        <option value="">Todos los estados</option>
+        <option value="disponible">Disponible</option>
+        <option value="vendido">Vendido</option>
+      </select>
+      <select class="filter-sel" id="hist-filter-modelo" onchange="renderHistorial()">
+        <option value="">Todos los modelos</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">📤 CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Foto</th><th>Modelo</th><th>Cap / Color</th><th>Condición</th>
+            <th>P. Compra</th><th>P. Venta</th><th>Estado</th>
+            <th>Fecha</th><th>Cliente</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: LOGIN
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal narrow">
+    <div class="login-box">
+      <div class="lion-icon">🦁</div>
+      <h2>Acceso Administrador</h2>
+      <p>Ingresa tus credenciales para gestionar el inventario</p>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="fg">
+        <label>Usuario</label>
+        <input type="text" id="login-user" placeholder="Tu nombre de usuario" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="fg" style="margin-top:12px;">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div id="login-error" style="color:var(--red);font-size:.8rem;display:none;margin-top:8px;">Usuario o contraseña incorrectos.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-login')">Cancelar</button>
+      <button class="btn btn-gold" onclick="doLogin()">🔐 Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: REGISTRAR COMPRA
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-compra">
+  <div class="modal wide">
+    <div class="modal-title">
+      📥 Registrar Compra
+      <button class="modal-close" onclick="closeModal('modal-compra')">✕</button>
+    </div>
+    <div class="form-grid cols3">
+      <div class="fg">
+        <label>Modelo *</label>
+        <select id="c-modelo" onchange="handleModeloChange()">
+          <option value="">Seleccionar…</option>
+        </select>
+      </div>
+      <div class="fg" id="c-modelo-custom-wrap" style="display:none">
+        <label>Modelo personalizado *</label>
+        <input type="text" id="c-modelo-custom" placeholder="Ej: iPhone SE 3ra Gen">
+      </div>
+      <div class="fg">
+        <label>Capacidad *</label>
+        <select id="c-cap">
+          <option value="">–</option>
+          <option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Color</label>
+        <select id="c-color">
+          <option value="">–</option>
+          <option>Negro</option><option>Blanco</option><option>Azul</option><option>Rojo</option>
+          <option>Morado</option><option>Verde</option><option>Amarillo</option><option>Rosa</option>
+          <option>Titanio Negro</option><option>Titanio Blanco</option><option>Titanio Natural</option>
+          <option>Titanio Azul</option><option>Plata</option><option>Oro</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Condición *</label>
+        <select id="c-cond">
+          <option>Nuevo</option><option>Usado como nuevo</option><option>Bueno</option><option>Con detalles</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>IMEI (opcional)</label>
+        <input type="text" id="c-imei" placeholder="15 dígitos" maxlength="20">
+        <span class="hint">Debe ser único si se ingresa</span>
+      </div>
+      <div class="fg">
+        <label>Precio Compra COP *</label>
+        <input type="number" id="c-precio-compra" placeholder="2500000" min="0">
+      </div>
+      <div class="fg">
+        <label>Precio Venta Sugerido COP *</label>
+        <input type="number" id="c-precio-venta" placeholder="3200000" min="0">
+      </div>
+      <div class="fg">
+        <label>Fecha Compra</label>
+        <input type="date" id="c-fecha">
+      </div>
+      <div class="fg span3">
+        <label>Notas</label>
+        <textarea id="c-notas" placeholder="Observaciones del equipo, proveedor, etc."></textarea>
+      </div>
+      <!-- Fotos del teléfono -->
+      <div class="fg span3">
+        <label>Fotos del teléfono * (mínimo 1)</label>
+        <div class="upload-zone" id="foto-zone">
+          <input type="file" id="c-fotos" accept="image/*" multiple onchange="previewFotos()">
+          📷 Arrastra o haz clic para subir fotos del iPhone
+        </div>
+        <div class="photo-preview-wrap" id="foto-preview"></div>
+      </div>
+      <!-- Comprobantes de compra -->
+      <div class="fg span3">
+        <label>Comprobante(s) de compra (PDF/imagen)</label>
+        <div class="upload-zone" id="comp-zone">
+          <input type="file" id="c-comprobantes" accept="image/*,.pdf" multiple onchange="previewComprobantes()">
+          📎 Subir comprobantes de compra (PDF o imagen)
+        </div>
+        <div id="comp-preview" style="margin-top:8px;font-size:.78rem;color:var(--muted);"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-compra')">Cancelar</button>
+      <button class="btn btn-gold" onclick="guardarCompra()">💾 Guardar Compra</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: VENDER
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-venta">
+  <div class="modal">
+    <div class="modal-title">
+      💸 Registrar Venta
+      <button class="modal-close" onclick="closeModal('modal-venta')">✕</button>
+    </div>
+    <div id="venta-device-info" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;font-size:.85rem;"></div>
+    <div class="form-grid">
+      <div class="fg">
+        <label>Precio de Venta Real COP *</label>
+        <input type="number" id="v-precio" placeholder="3200000" min="0">
+      </div>
+      <div class="fg">
+        <label>Fecha de Venta</label>
+        <input type="date" id="v-fecha">
+      </div>
+      <div class="fg">
+        <label>Nombre del Cliente *</label>
+        <input type="text" id="v-cliente-nombre" placeholder="Nombre completo">
+      </div>
+      <div class="fg">
+        <label>Teléfono del Cliente</label>
+        <input type="text" id="v-cliente-tel" placeholder="+57 300 000 0000">
+      </div>
+      <div class="fg span2">
+        <label>Correo del Cliente</label>
+        <input type="email" id="v-cliente-email" placeholder="cliente@email.com">
+      </div>
+      <div class="fg span2">
+        <label>Comprobante(s) de venta (PDF/imagen)</label>
+        <div class="upload-zone">
+          <input type="file" id="v-comprobantes" accept="image/*,.pdf" multiple onchange="previewVentaComp()">
+          📎 Subir comprobantes de pago / transferencia
+        </div>
+        <div id="v-comp-preview" style="margin-top:8px;font-size:.78rem;color:var(--muted);"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-venta')">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmarVenta()">✅ Confirmar Venta y Generar Recibo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: FOTOS / DESCARGAR
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-fotos">
+  <div class="modal wide">
+    <div class="modal-title">
+      📸 Fotos del Dispositivo
+      <button class="modal-close" onclick="closeModal('modal-fotos')">✕</button>
+    </div>
+    <div id="fotos-grid" class="photo-modal-grid"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-fotos')">Cerrar</button>
+      <button class="btn btn-gold" id="btn-dl-zip" onclick="downloadAllPhotos()">⬇️ Descargar Todas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: RECIBO DE VENTA
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-recibo">
+  <div class="modal wide">
+    <div class="modal-title">
+      🧾 Recibo de Venta
+      <button class="modal-close" onclick="closeModal('modal-recibo')">✕</button>
+    </div>
+    <div id="receipt-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-recibo')">Cerrar</button>
+      <button class="btn btn-gold" onclick="printReceipt()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print area (hidden, shown only during print) -->
+<div id="print-area" style="display:none;"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<footer>
+  <span>MYLION — Inventario de iPhones 🦁</span>
+  <span id="footer-update">–</span>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────
+   CREDENCIALES
+───────────────────────────────────────── */
+const ADMINS = {
+  david: '137',
+  alejandro: '098',
+  nicolas: '124',
+  angelica: '453'
+};
+
+/* ─────────────────────────────────────────
+   MODELOS IPHONE COMPLETO
+───────────────────────────────────────── */
+const BASE_MODELOS = [
+  'iPhone 6','iPhone 6 Plus','iPhone 6s','iPhone 6s Plus',
+  'iPhone SE (1ra Gen)','iPhone 7','iPhone 7 Plus',
+  'iPhone 8','iPhone 8 Plus','iPhone X','iPhone XR',
+  'iPhone XS','iPhone XS Max','iPhone SE (2da Gen)',
+  'iPhone 11','iPhone 11 Pro','iPhone 11 Pro Max',
+  'iPhone 12 Mini','iPhone 12','iPhone 12 Pro','iPhone 12 Pro Max',
+  'iPhone 13 Mini','iPhone 13','iPhone 13 Pro','iPhone 13 Pro Max',
+  'iPhone SE (3ra Gen)',
+  'iPhone 14','iPhone 14 Plus','iPhone 14 Pro','iPhone 14 Pro Max',
+  'iPhone 15','iPhone 15 Plus','iPhone 15 Pro','iPhone 15 Pro Max',
+  'iPhone 16','iPhone 16 Plus','iPhone 16 Pro','iPhone 16 Pro Max'
+];
+
+/* ─────────────────────────────────────────
+   ESTADO SESIÓN
+───────────────────────────────────────── */
+let currentAdmin = null;
+let currentVentaId = null;
+let currentFotosDeviceId = null;
+
+/* ─────────────────────────────────────────
+   INDEXEDDB
+───────────────────────────────────────── */
+let db;
+const DB_NAME = 'mylion_db';
+const DB_VER = 2;
+
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => { db = req.result; resolve(); };
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('devices')) {
+        const s = d.createObjectStore('devices', { keyPath: 'id' });
+        s.createIndex('estado', 'estado', { unique: false });
+      }
+      if (!d.objectStoreNames.contains('modelos_extra')) {
+        d.createObjectStore('modelos_extra', { keyPath: 'nombre' });
+      }
+    };
+  });
+}
+
+function txn(store, mode) {
+  return db.transaction([store], mode).objectStore(store);
+}
+
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const req = txn(store, 'readonly').getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbPut(store, obj) {
+  return new Promise((res, rej) => {
+    const req = txn(store, 'readwrite').put(obj);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const req = txn(store, 'readwrite').delete(key);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((res, rej) => {
+    const req = txn(store, 'readonly').get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+/* ─────────────────────────────────────────
+   SEED DATOS DEMO
+───────────────────────────────────────── */
+async function seedDemo() {
+  const all = await dbGetAll('devices');
+  if (all.length) return;
+
+  // Placeholder photo (simple gradient SVG as base64)
+  const ph1 = 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient></defs><rect width="400" height="500" fill="url(#g)"/><rect x="120" y="60" width="160" height="280" rx="24" ry="24" fill="none" stroke="#c9a84c" stroke-width="3"/><rect x="135" y="80" width="130" height="220" rx="6" ry="6" fill="#0a0a1a"/><circle cx="200" cy="320" r="12" fill="none" stroke="#c9a84c" stroke-width="2"/><text x="200" y="420" text-anchor="middle" fill="#c9a84c" font-family="Arial" font-size="14" font-weight="bold">MYLION</text></svg>`);
+  const ph2 = 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500"><rect width="400" height="500" fill="#0d0d1a"/><rect x="100" y="40" width="200" height="350" rx="30" ry="30" fill="#1c1c2e" stroke="#c9a84c" stroke-width="2.5"/><rect x="115" y="65" width="170" height="290" rx="8" ry="8" fill="#060610"/><circle cx="200" cy="390" r="16" fill="none" stroke="#c9a84c" stroke-width="2"/><text x="200" y="460" text-anchor="middle" fill="#7070a0" font-family="Arial" font-size="12">iPhone</text></svg>`);
+
+  const demos = [
+    {
+      id: 'demo-001',
+      modelo: 'iPhone 15 Pro Max', capacidad: '256GB', color: 'Titanio Negro',
+      condicion: 'Nuevo', precioCompra: 4200000, precioVentaSugerido: 5500000,
+      imei: '', fotos: [ph1, ph2], comprobantesCompra: [], comprobantesVenta: [],
+      estado: 'disponible', fechaCompra: '2024-06-01', fechaVenta: null,
+      datosCliente: null, reciboHTML: null, notas: 'Equipo de exhibición'
+    },
+    {
+      id: 'demo-002',
+      modelo: 'iPhone 14 Pro', capacidad: '128GB', color: 'Plata',
+      condicion: 'Usado como nuevo', precioCompra: 2800000, precioVentaSugerido: 3600000,
+      imei: '351234567891234', fotos: [ph2], comprobantesCompra: [], comprobantesVenta: [],
+      estado: 'disponible', fechaCompra: '2024-06-05', fechaVenta: null,
+      datosCliente: null, reciboHTML: null, notas: ''
+    },
+    {
+      id: 'demo-003',
+      modelo: 'iPhone 13', capacidad: '128GB', color: 'Azul',
+      condicion: 'Bueno', precioCompra: 1900000, precioVentaSugerido: 2500000,
+      imei: '', fotos: [ph1], comprobantesCompra: [], comprobantesVenta: [],
+      estado: 'disponible', fechaCompra: '2024-06-10', fechaVenta: null,
+      datosCliente: null, reciboHTML: null, notas: ''
+    }
+  ];
+  for (const d of demos) await dbPut('devices', d);
+}
+
+/* ─────────────────────────────────────────
+   AUTH
+───────────────────────────────────────── */
+function openLogin() { openModal('modal-login'); document.getElementById('login-user').focus(); }
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err = document.getElementById('login-error');
+
+  if (ADMINS[user] && ADMINS[user] === pass) {
+    currentAdmin = user;
+    err.style.display = 'none';
+    closeModal('modal-login');
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+    applyAdminUI();
+    showToast('✅ Bienvenido, ' + capitalize(user));
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+function logout() {
+  currentAdmin = null;
+  applyAdminUI();
+  showToast('👋 Sesión cerrada');
+  showPage('dashboard');
+}
+
+function applyAdminUI() {
+  const isAdmin = !!currentAdmin;
+  document.getElementById('auth-area').style.display = isAdmin ? 'none' : '';
+  document.getElementById('admin-area').style.display = isAdmin ? '' : 'none';
+  document.getElementById('admin-actions-bar').style.display = isAdmin ? '' : 'none';
+  document.getElementById('nav-hist').style.display = isAdmin ? '' : 'none';
+  document.getElementById('m-admin-1').style.display = isAdmin ? '' : 'none';
+  document.getElementById('m-admin-2').style.display = isAdmin ? '' : 'none';
+  document.getElementById('m-public-3').style.display = isAdmin ? 'none' : '';
+  document.getElementById('m-public-4').style.display = isAdmin ? 'none' : '';
+  if (isAdmin) document.getElementById('admin-name-label').textContent = capitalize(currentAdmin);
+  renderDashboard();
+  updateMetrics();
+}
+
+function requireAdmin(fn) {
+  if (!currentAdmin) { openLogin(); return; }
+  fn();
+}
+
+/* ─────────────────────────────────────────
+   PÁGINAS
+───────────────────────────────────────── */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  if (name === 'historial' && !currentAdmin) { openLogin(); return; }
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + (name === 'dashboard' ? 'dash' : 'hist')).classList.add('active');
+  if (name === 'historial') { populateHistFilter(); renderHistorial(); }
+}
+
+/* ─────────────────────────────────────────
+   UTILS
+───────────────────────────────────────── */
+function fmtCOP(n) {
+  if (!n && n !== 0) return '–';
+  return '$ ' + Number(n).toLocaleString('es-CO');
+}
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function showToast(msg, isErr=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ─────────────────────────────────────────
+   MODELOS DROPDOWN
+───────────────────────────────────────── */
+async function getModelos() {
+  const extras = await dbGetAll('modelos_extra');
+  const extraNames = extras.map(e => e.nombre);
+  return [...BASE_MODELOS, ...extraNames];
+}
+
+async function populateModeloSelect() {
+  const modelos = await getModelos();
+  const sel = document.getElementById('c-modelo');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Seleccionar…</option>';
+  modelos.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    if (m === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+  const otro = document.createElement('option');
+  otro.value = '_otro'; otro.textContent = '✏️ Otro (escribir)';
+  sel.appendChild(otro);
+}
+
+async function populateDashModeloFilter() {
+  const all = await dbGetAll('devices');
+  const used = [...new Set(all.map(d => d.modelo).filter(Boolean))].sort();
+  const sel = document.getElementById('dash-filter-modelo');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los modelos</option>';
+  used.forEach(m => { const o = document.createElement('option'); o.value=m; o.textContent=m; if(m===cur)o.selected=true; sel.appendChild(o); });
+}
+
+async function populateHistFilter() {
+  const all = await dbGetAll('devices');
+  const used = [...new Set(all.map(d => d.modelo).filter(Boolean))].sort();
+  const sel = document.getElementById('hist-filter-modelo');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los modelos</option>';
+  used.forEach(m => { const o = document.createElement('option'); o.value=m; o.textContent=m; if(m===cur)o.selected=true; sel.appendChild(o); });
+}
+
+function handleModeloChange() {
+  const v = document.getElementById('c-modelo').value;
+  document.getElementById('c-modelo-custom-wrap').style.display = v === '_otro' ? '' : 'none';
+}
+
+/* ─────────────────────────────────────────
+   METRICS
+───────────────────────────────────────── */
+async function updateMetrics() {
+  const all = await dbGetAll('devices');
+  const disp = all.filter(d => d.estado === 'disponible');
+  const vend = all.filter(d => d.estado === 'vendido');
+  const modelos = new Set(disp.map(d => d.modelo).filter(Boolean));
+
+  document.getElementById('m-stock').textContent = disp.length;
+  document.getElementById('m-vendidos').textContent = vend.length;
+  document.getElementById('m-modelos').textContent = modelos.size;
+
+  if (currentAdmin) {
+    const ingresos = vend.reduce((s,d) => s+(Number(d.precioVentaReal)||0), 0);
+    const costoV = vend.reduce((s,d) => s+(Number(d.precioCompra)||0), 0);
+    const utilidad = ingresos - costoV;
+    const margen = ingresos > 0 ? (utilidad/ingresos*100).toFixed(1) : 0;
+    document.getElementById('m-ingresos').textContent = fmtCOP(ingresos);
+    document.getElementById('m-utilidad').textContent = fmtCOP(utilidad);
+    document.getElementById('m-margen').textContent = margen + '% margen';
+  }
+
+  const now = new Date();
+  document.getElementById('m-fecha').textContent = now.toLocaleDateString('es-CO');
+  document.getElementById('footer-update').textContent = 'Actualizado: ' + now.toLocaleString('es-CO');
+}
+
+/* ─────────────────────────────────────────
+   DASHBOARD RENDER
+───────────────────────────────────────── */
+async function renderDashboard() {
+  await populateDashModeloFilter();
+  const all = await dbGetAll('devices');
+  let data = all.filter(d => d.estado === 'disponible');
+
+  const q = document.getElementById('dash-search').value.toLowerCase();
+  const fm = document.getElementById('dash-filter-modelo').value;
+  const fc = document.getElementById('dash-filter-cap').value;
+
+  if (q) data = data.filter(d =>
+    (d.modelo||'').toLowerCase().includes(q) ||
+    (d.color||'').toLowerCase().includes(q) ||
+    (d.imei||'').includes(q) ||
+    (d.condicion||'').toLowerCase().includes(q)
+  );
+  if (fm) data = data.filter(d => d.modelo === fm);
+  if (fc) data = data.filter(d => d.capacidad === fc);
+
+  const grid = document.getElementById('devices-grid');
+  document.getElementById('dash-count-label').textContent = data.length + ' disponibles';
+
+  if (!data.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">📭</div><p>No hay dispositivos que coincidan</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = data.map(d => buildDeviceCard(d)).join('');
+}
+
+function buildDeviceCard(d) {
+  const fotos = d.fotos || [];
+  const hasFotos = fotos.length > 0;
+  const carouselId = 'car-' + d.id;
+
+  let carouselHtml = '';
+  if (hasFotos) {
+    carouselHtml = `
+      <div class="card-carousel" id="${carouselId}">
+        <img src="${fotos[0]}" alt="foto" id="${carouselId}-img" onclick="openFotosModal('${d.id}')">
+        ${fotos.length > 1 ? `
+          <button class="carousel-arrow left" onclick="event.stopPropagation();carouselNav('${d.id}',-1)">‹</button>
+          <button class="carousel-arrow right" onclick="event.stopPropagation();carouselNav('${d.id}',1)">›</button>
+          <div class="carousel-dots">${fotos.map((_,i)=>`<div class="cdot${i===0?' active':''}" onclick="event.stopPropagation();carouselGo('${d.id}',${i})" id="${carouselId}-dot-${i}"></div>`).join('')}</div>
+        ` : ''}
+      </div>`;
+  } else {
+    carouselHtml = `<div class="card-carousel"><div class="no-photo">📱</div></div>`;
+  }
+
+  const adminBtns = currentAdmin ? `
+    <button class="btn btn-danger btn-sm" onclick="openVentaModal('${d.id}')">💸 Vender</button>
+  ` : '';
+
+  return `
+    <div class="device-card">
+      ${carouselHtml}
+      <div class="card-body">
+        <div class="card-badge">${d.condicion}</div>
+        <div class="card-model">${d.modelo}</div>
+        <div class="card-specs">${d.capacidad || ''} ${d.color ? '· ' + d.color : ''} ${d.imei ? '<span class="imei-badge">IMEI: '+d.imei+'</span>' : ''}</div>
+        <div class="card-price">${fmtCOP(d.precioVentaSugerido)}</div>
+        <div class="card-actions">
+          ${hasFotos ? `<button class="btn btn-outline btn-sm" onclick="openFotosModal('${d.id}')">📸 Ver fotos</button>` : ''}
+          ${adminBtns}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* carousel helpers */
+const carouselIdx = {};
+async function carouselNav(id, dir) {
+  const device = await dbGet('devices', id);
+  if (!device) return;
+  const fotos = device.fotos || [];
+  if (!fotos.length) return;
+  carouselIdx[id] = ((carouselIdx[id] || 0) + dir + fotos.length) % fotos.length;
+  carouselGo(id, carouselIdx[id]);
+}
+function carouselGo(id, idx) {
+  const img = document.getElementById('car-' + id + '-img');
+  if (!img) return;
+  // get fotos from already loaded (stored in dataset by card)
+  img.src = img.closest('.device-card').querySelector(`.cdot:nth-child(${idx+1})`) 
+    ? '' : img.src; // fallback – reload
+  // We store data in dom for quick access
+  const dots = document.querySelectorAll(`#car-${id} .cdot`);
+  dots.forEach((d,i) => d.classList.toggle('active', i===idx));
+  carouselIdx[id] = idx;
+  // Fetch from DB and update img
+  dbGet('devices', id).then(d => {
+    if (d && d.fotos && d.fotos[idx]) img.src = d.fotos[idx];
+  });
+}
+
+/* ─────────────────────────────────────────
+   FOTOS MODAL (público)
+───────────────────────────────────────── */
+async function openFotosModal(id) {
+  currentFotosDeviceId = id;
+  const device = await dbGet('devices', id);
+  if (!device) return;
+  const fotos = device.fotos || [];
+  const grid = document.getElementById('fotos-grid');
+  if (!fotos.length) { grid.innerHTML = '<p style="color:var(--muted)">Sin fotos disponibles</p>'; }
+  else {
+    grid.innerHTML = fotos.map((f, i) => `
+      <div class="photo-modal-item">
+        <img src="${f}" alt="foto ${i+1}">
+        <button class="dl-btn" onclick="downloadFoto('${id}',${i})">⬇️ Descargar</button>
+      </div>`).join('');
+  }
+  openModal('modal-fotos');
+}
+
+async function downloadFoto(id, idx) {
+  const device = await dbGet('devices', id);
+  if (!device || !device.fotos[idx]) return;
+  const a = document.createElement('a');
+  a.href = device.fotos[idx];
+  a.download = `${device.modelo || 'iphone'}_foto_${idx+1}.jpg`;
+  a.click();
+}
+
+async function downloadAllPhotos() {
+  const device = await dbGet('devices', currentFotosDeviceId);
+  if (!device) return;
+  (device.fotos || []).forEach((f, i) => {
+    setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = f;
+      a.download = `${device.modelo || 'iphone'}_foto_${i+1}.jpg`;
+      a.click();
+    }, i * 300);
+  });
+}
+
+/* ─────────────────────────────────────────
+   REGISTRAR COMPRA
+───────────────────────────────────────── */
+async function openCompraModal() {
+  await populateModeloSelect();
+  document.getElementById('c-modelo-custom-wrap').style.display = 'none';
+  ['c-modelo','c-cap','c-color','c-cond','c-imei','c-precio-compra','c-precio-venta','c-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = el.tagName === 'SELECT' ? (el.options[0]?.value || '') : '';
+  });
+  document.getElementById('c-fecha').value = todayStr();
+  document.getElementById('c-modelo-custom').value = '';
+  document.getElementById('foto-preview').innerHTML = '';
+  document.getElementById('comp-preview').innerHTML = '';
+  openModal('modal-compra');
+}
+
+async function previewFotos() {
+  const files = document.getElementById('c-fotos').files;
+  const wrap = document.getElementById('foto-preview');
+  wrap.innerHTML = '';
+  for (const f of files) {
+    const b64 = await fileToB64(f);
+    const img = document.createElement('img');
+    img.src = b64; img.className = 'photo-thumb';
+    wrap.appendChild(img);
+  }
+}
+
+function previewComprobantes() {
+  const files = document.getElementById('c-comprobantes').files;
+  const div = document.getElementById('comp-preview');
+  div.innerHTML = [...files].map(f => `📎 ${f.name}`).join('<br>');
+}
+
+function previewVentaComp() {
+  const files = document.getElementById('v-comprobantes').files;
+  const div = document.getElementById('v-comp-preview');
+  div.innerHTML = [...files].map(f => `📎 ${f.name}`).join('<br>');
+}
+
+function fileToB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+async function guardarCompra() {
+  const modeloSel = document.getElementById('c-modelo').value;
+  const modeloCustom = document.getElementById('c-modelo-custom').value.trim();
+  const modelo = modeloSel === '_otro' ? modeloCustom : modeloSel;
+  const cap = document.getElementById('c-cap').value;
+  const color = document.getElementById('c-color').value;
+  const cond = document.getElementById('c-cond').value;
+  const imei = document.getElementById('c-imei').value.trim();
+  const precioCompra = Number(document.getElementById('c-precio-compra').value);
+  const precioVenta = Number(document.getElementById('c-precio-venta').value);
+  const fecha = document.getElementById('c-fecha').value || todayStr();
+  const notas = document.getElementById('c-notas').value.trim();
+
+  if (!modelo) { showToast('⚠️ Selecciona o escribe un modelo', true); return; }
+  if (!cap) { showToast('⚠️ Selecciona la capacidad', true); return; }
+  if (!precioCompra) { showToast('⚠️ Ingresa el precio de compra', true); return; }
+  if (!precioVenta) { showToast('⚠️ Ingresa el precio de venta sugerido', true); return; }
+
+  // Validar IMEI único
+  if (imei) {
+    const all = await dbGetAll('devices');
+    const dup = all.find(d => d.imei && d.imei === imei);
+    if (dup) { showToast('⚠️ IMEI ya registrado en otro equipo', true); return; }
+  }
+
+  // Fotos (obligatorio mínimo 1)
+  const fotoFiles = document.getElementById('c-fotos').files;
+  if (!fotoFiles.length) { showToast('⚠️ Sube al menos una foto del equipo', true); return; }
+  const fotos = [];
+  for (const f of fotoFiles) fotos.push(await fileToB64(f));
+
+  // Comprobantes compra
+  const compFiles = document.getElementById('c-comprobantes').files;
+  const comprobantesCompra = [];
+  for (const f of compFiles) {
+    comprobantesCompra.push({ nombre: f.name, tipo: f.type, data: await fileToB64(f) });
+  }
+
+  // Guardar modelo extra si aplica
+  if (modeloSel === '_otro' && modeloCustom) {
+    await dbPut('modelos_extra', { nombre: modeloCustom });
+  }
+
+  const device = {
+    id: uid(),
+    modelo, capacidad: cap, color, condicion: cond, imei,
+    precioCompra, precioVentaSugerido: precioVenta, precioVentaReal: null,
+    fotos, comprobantesCompra, comprobantesVenta: [],
+    estado: 'disponible',
+    fechaCompra: fecha, fechaVenta: null,
+    datosCliente: null, reciboHTML: null, notas
+  };
+
+  await dbPut('devices', device);
+  closeModal('modal-compra');
+  showToast('✅ Compra registrada: ' + modelo);
+  renderDashboard();
+  updateMetrics();
+}
+
+/* ─────────────────────────────────────────
+   REGISTRAR VENTA
+───────────────────────────────────────── */
+async function openVentaModal(id) {
+  if (!currentAdmin) { openLogin(); return; }
+  currentVentaId = id;
+  const device = await dbGet('devices', id);
+  if (!device) return;
+
+  document.getElementById('venta-device-info').innerHTML = `
+    <strong>${device.modelo}</strong> · ${device.capacidad} · ${device.color || '–'}<br>
+    <span style="color:var(--muted);font-size:.8rem">Condición: ${device.condicion}${device.imei ? ' · IMEI: '+device.imei : ''}</span><br>
+    <span style="color:var(--accent);font-family:'DM Mono',monospace;font-size:1rem">${fmtCOP(device.precioVentaSugerido)}</span>
+    <span style="color:var(--muted);font-size:.78rem"> precio sugerido</span>
+  `;
+  document.getElementById('v-precio').value = device.precioVentaSugerido || '';
+  document.getElementById('v-fecha').value = todayStr();
+  document.getElementById('v-cliente-nombre').value = '';
+  document.getElementById('v-cliente-tel').value = '';
+  document.getElementById('v-cliente-email').value = '';
+  document.getElementById('v-comp-preview').innerHTML = '';
+  openModal('modal-venta');
+}
+
+async function confirmarVenta() {
+  const nombre = document.getElementById('v-cliente-nombre').value.trim();
+  const tel = document.getElementById('v-cliente-tel').value.trim();
+  const email = document.getElementById('v-cliente-email').value.trim();
+  const precio = Number(document.getElementById('v-precio').value);
+  const fecha = document.getElementById('v-fecha').value || todayStr();
+
+  if (!nombre) { showToast('⚠️ Ingresa el nombre del cliente', true); return; }
+  if (!precio) { showToast('⚠️ Ingresa el precio de venta', true); return; }
+
+  const device = await dbGet('devices', currentVentaId);
+  if (!device) return;
+
+  // Comprobantes de venta
+  const compFiles = document.getElementById('v-comprobantes').files;
+  const comprobantesVenta = [];
+  for (const f of compFiles) {
+    comprobantesVenta.push({ nombre: f.name, tipo: f.type, data: await fileToB64(f) });
+  }
+
+  const reciboNum = 'RCV-' + Date.now().toString().slice(-6);
+
+  const updDevice = {
+    ...device,
+    estado: 'vendido',
+    precioVentaReal: precio,
+    fechaVenta: fecha,
+    comprobantesVenta,
+    datosCliente: { nombre, tel, email }
+  };
+
+  // Generar HTML del recibo
+  const reciboHTML = generarReciboHTML(updDevice, reciboNum);
+  updDevice.reciboHTML = reciboHTML;
+
+  await dbPut('devices', updDevice);
+  closeModal('modal-venta');
+  showToast('✅ Venta registrada. Generando recibo…');
+  renderDashboard();
+  updateMetrics();
+
+  // Mostrar recibo
+  setTimeout(() => mostrarRecibo(reciboHTML), 400);
+}
+
+/* ─────────────────────────────────────────
+   RECIBO
+───────────────────────────────────────── */
+function generarReciboHTML(device, reciboNum) {
+  const hoy = new Date(device.fechaVenta || Date.now()).toLocaleDateString('es-CO', {
+    year:'numeric', month:'long', day:'numeric'
+  });
+  const compNombres = (device.comprobantesVenta || []).map(c => c.nombre).join(', ') || 'N/A';
+
+  return `
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111;padding:36px;max-width:600px;margin:0 auto;background:#fff;border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+        <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 10C45 10 38 14 35 20L30 18C28 22 30 27 33 28L31 35C28 40 28 46 30 50C25 52 22 57 23 63C24 68 28 71 32 72L33 80C34 86 39 90 45 91H55C61 90 66 86 67 80L68 72C72 71 76 68 77 63C78 57 75 52 70 50C72 46 72 40 69 35L67 28C70 27 72 22 70 18L65 20C62 14 55 10 50 10Z" stroke="#b8860b" stroke-width="3.5" fill="none"/>
+          <circle cx="40" cy="47" r="3.5" fill="#b8860b"/>
+          <circle cx="60" cy="47" r="3.5" fill="#b8860b"/>
+          <path d="M38 55C38 55 42 59 50 59C58 59 62 55 62 55" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <span style="font-size:1.8rem;font-weight:900;letter-spacing:.04em;color:#b8860b;">MYLION</span>
+      </div>
+      <div style="color:#777;font-size:.8rem;margin-bottom:20px;">Compra y Venta de iPhones</div>
+      <hr style="border:none;border-top:2px solid #b8860b;margin-bottom:20px;">
+      
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">Recibo de Venta</h2>
+      <div style="color:#555;font-size:.82rem;margin-bottom:20px;">
+        <strong>N°:</strong> ${reciboNum} &nbsp;|&nbsp; <strong>Fecha:</strong> ${hoy}
+      </div>
+
+      <div style="background:#f8f5ec;border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:10px;">Datos del Cliente</div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Nombre</span><strong>${device.datosCliente?.nombre || '–'}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Teléfono</span><span>${device.datosCliente?.tel || '–'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Correo</span><span>${device.datosCliente?.email || '–'}</span></div>
+      </div>
+
+      <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:10px;">Equipo Vendido</div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Modelo</span><strong>${device.modelo}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Capacidad</span><span>${device.capacidad || '–'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Color</span><span>${device.color || '–'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">Condición</span><span>${device.condicion}</span></div>
+        ${device.imei ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem;"><span style="color:#666;">IMEI</span><span style="font-family:monospace;">${device.imei}</span></div>` : ''}
+      </div>
+
+      ${compNombres !== 'N/A' ? `<div style="font-size:.82rem;color:#666;margin-bottom:14px;">📎 Comprobantes: ${compNombres}</div>` : ''}
+
+      <div style="display:flex;justify-content:space-between;padding:14px 0;font-size:1.15rem;font-weight:800;border-top:2px solid #111;margin-top:4px;">
+        <span>TOTAL PAGADO</span>
+        <span style="color:#b8860b;">${fmtCOP(device.precioVentaReal)}</span>
+      </div>
+
+      <div style="margin-top:20px;padding:14px;background:#f9f5e7;border-left:3px solid #b8860b;border-radius:4px;font-size:.8rem;color:#666;line-height:1.5;">
+        ✅ <strong>Garantía:</strong> Este equipo fue revisado y verificado antes de su venta. MYLION garantiza la autenticidad del dispositivo. Para soporte, contáctenos con este recibo.<br>
+        🦁 <em>¡Gracias por confiar en MYLION!</em>
+      </div>
+    </div>
+  `;
+}
+
+function mostrarRecibo(html) {
+  document.getElementById('receipt-content').innerHTML = html;
+  openModal('modal-recibo');
+}
+
+function printReceipt() {
+  const html = document.getElementById('receipt-content').innerHTML;
+  const pa = document.getElementById('print-area');
+  pa.innerHTML = html;
+  pa.style.display = 'block';
+  window.print();
+  pa.style.display = 'none';
+}
+
+/* ─────────────────────────────────────────
+   HISTORIAL
+───────────────────────────────────────── */
+async function renderHistorial() {
+  if (!currentAdmin) return;
+  let all = await dbGetAll('devices');
+
+  const q = document.getElementById('hist-search').value.toLowerCase();
+  const fe = document.getElementById('hist-filter-estado').value;
+  const fm = document.getElementById('hist-filter-modelo').value;
+
+  if (q) all = all.filter(d =>
+    (d.modelo||'').toLowerCase().includes(q) ||
+    (d.imei||'').includes(q) ||
+    (d.datosCliente?.nombre||'').toLowerCase().includes(q) ||
+    (d.color||'').toLowerCase().includes(q)
+  );
+  if (fe) all = all.filter(d => d.estado === fe);
+  if (fm) all = all.filter(d => d.modelo === fm);
+
+  all.sort((a,b) => new Date(b.fechaCompra||0) - new Date(a.fechaCompra||0));
+
+  const tbody = document.getElementById('hist-body');
+  if (!all.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">📭</div><p>Sin resultados</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = all.map(d => {
+    const foto = (d.fotos && d.fotos[0]) ? `<img src="${d.fotos[0]}" style="width:46px;height:46px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="openFotosModal('${d.id}')">` : '📱';
+    const chipCls = d.estado === 'disponible' ? 'chip-disp' : 'chip-vend';
+    const chipLabel = d.estado === 'disponible' ? 'Disponible' : 'Vendido';
+    const cliente = d.datosCliente ? `${d.datosCliente.nombre}<br><small style="color:var(--muted)">${d.datosCliente.tel||''}</small>` : '–';
+    const reciboBtn = d.reciboHTML ? `<button class="btn btn-outline btn-sm" onclick="mostrarRecibo(devices_cache['${d.id}'].reciboHTML)">🧾 Recibo</button>` : '';
+    return `<tr>
+      <td>${foto}</td>
+      <td><strong>${d.modelo}</strong>${d.imei?'<br><span class="imei-badge">'+d.imei+'</span>':''}</td>
+      <td class="mono" style="font-size:.8rem">${d.capacidad||'–'}<br><span style="color:var(--muted)">${d.color||'–'}</span></td>
+      <td>${d.condicion}</td>
+      <td class="mono">${fmtCOP(d.precioCompra)}</td>
+      <td class="mono">${d.precioVentaReal ? fmtCOP(d.precioVentaReal) : fmtCOP(d.precioVentaSugerido)}</td>
+      <td><span class="chip ${chipCls}">${chipLabel}</span></td>
+      <td style="font-size:.78rem;color:var(--muted)">${d.fechaCompra||'–'}<br>${d.fechaVenta ? '→ '+d.fechaVenta : ''}</td>
+      <td style="font-size:.82rem">${cliente}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          ${(d.fotos||[]).length ? `<button class="btn btn-outline btn-sm" onclick="openFotosModal('${d.id}')">📸</button>` : ''}
+          ${(d.comprobantesCompra||[]).length ? `<button class="btn btn-outline btn-sm" onclick="verComprobantes('${d.id}','compra')">📎C</button>` : ''}
+          ${(d.comprobantesVenta||[]).length ? `<button class="btn btn-outline btn-sm" onclick="verComprobantes('${d.id}','venta')">📎V</button>` : ''}
+          ${d.reciboHTML ? `<button class="btn btn-green btn-sm" onclick="verRecibo('${d.id}')">🧾</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="eliminarDevice('${d.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function verRecibo(id) {
+  const d = await dbGet('devices', id);
+  if (d && d.reciboHTML) mostrarRecibo(d.reciboHTML);
+}
+
+async function verComprobantes(id, tipo) {
+  const d = await dbGet('devices', id);
+  if (!d) return;
+  const comps = tipo === 'compra' ? (d.comprobantesCompra||[]) : (d.comprobantesVenta||[]);
+  if (!comps.length) { showToast('Sin comprobantes adjuntos'); return; }
+  comps.forEach((c, i) => {
+    setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = c.data;
+      a.download = c.nombre || `comprobante_${i+1}`;
+      a.click();
+    }, i * 400);
+  });
+}
+
+async function eliminarDevice(id) {
+  if (!confirm('¿Eliminar este registro permanentemente?')) return;
+  await dbDelete('devices', id);
+  showToast('🗑️ Registro eliminado');
+  renderHistorial();
+  renderDashboard();
+  updateMetrics();
+}
+
+/* ─────────────────────────────────────────
+   EXPORT CSV
+───────────────────────────────────────── */
+async function exportCSV() {
+  const all = await dbGetAll('devices');
+  const headers = ['ID','Modelo','Capacidad','Color','Condicion','IMEI','P.Compra COP','P.Venta Sugerido','P.Venta Real','Estado','Fecha Compra','Fecha Venta','Cliente','Teléfono','Correo','Notas'];
+  const rows = all.map(d => [
+    d.id, d.modelo, d.capacidad, d.color, d.condicion, d.imei||'',
+    d.precioCompra, d.precioVentaSugerido, d.precioVentaReal||'',
+    d.estado, d.fechaCompra||'', d.fechaVenta||'',
+    d.datosCliente?.nombre||'', d.datosCliente?.tel||'', d.datosCliente?.email||'',
+    d.notas||''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `mylion_inventario_${todayStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('📤 CSV exportado');
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+async function init() {
+  await initDB();
+  await seedDemo();
+  applyAdminUI();
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+}
+
+init();
+</script>
+</body>
+</html>
