@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iStock — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #18181f;
+    --border: #2a2a38;
+    --accent: #00e5a0;
+    --accent2: #6b5ce7;
+    --warn: #ff6b35;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --profit: #00e5a0;
+    --loss: #ff4466;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 40px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(20px); z-index: 100;
+  }
+  .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; }
+  .logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-link { padding: 8px 18px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--muted); transition: all 0.2s; letter-spacing: 0.02em; }
+  .nav-link:hover { color: var(--text); background: var(--card); }
+  .nav-link.active { color: var(--accent); background: rgba(0,229,160,0.1); }
+
+  .main { padding: 40px; max-width: 1300px; margin: 0 auto; }
+
+  .page-header { margin-bottom: 36px; }
+  .page-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+  .page-sub { font-size: 0.88rem; color: var(--muted); margin-top: 6px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 32px; width: fit-content; }
+  .tab { padding: 10px 22px; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--muted); transition: all 0.2s; border: none; background: none; font-family: 'Syne', sans-serif; }
+  .tab.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* FORM CARDS */
+  .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .form-card-header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .form-card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+  .icon-green { background: rgba(0,229,160,0.12); }
+  .icon-purple { background: rgba(107,92,231,0.15); }
+  .icon-orange { background: rgba(255,107,53,0.12); }
+  .form-card-title { font-size: 1rem; font-weight: 700; }
+  .form-card-body { padding: 28px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .span-2 { grid-column: span 2; }
+  .span-3 { grid-column: span 3; }
+
+  .form-group { display: flex; flex-direction: column; gap: 7px; }
+  .form-group label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; font-family: 'Syne', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group .hint { font-size: 0.72rem; color: var(--muted); }
+
+  .calc-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .calc-item label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; }
+  .calc-item .val { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 500; }
+  .val-green { color: var(--accent); }
+  .val-muted { color: var(--muted); }
+
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn { padding: 12px 22px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; font-family: 'Syne', sans-serif; cursor: pointer; border: none; letter-spacing: 0.02em; transition: all 0.2s; }
+  .btn-accent { background: var(--accent); color: #000; }
+  .btn-accent:hover { background: #00ffb3; transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,68,102,0.12); color: var(--loss); border: 1px solid rgba(255,68,102,0.25); }
+  .btn-danger:hover { background: rgba(255,68,102,0.2); }
+  .btn-purple { background: var(--accent2); color: #fff; }
+  .btn-purple:hover { background: #7d70ef; }
+
+  /* LIST TABLE */
+  .section-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; margin-top: 32px; }
+  .section-sub-title { font-size: 0.95rem; font-weight: 700; }
+  .count-badge { font-size: 0.75rem; font-family: 'DM Mono', monospace; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 3px 10px; border-radius: 20px; }
+
+  .list-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: var(--surface); border-bottom: 1px solid var(--border); }
+  th { padding: 12px 16px; text-align: left; font-size: 0.67rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  tbody tr { border-bottom: 1px solid rgba(42,42,56,0.5); transition: background 0.15s; }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 13px 16px; font-size: 0.85rem; }
+  .mono { font-family: 'DM Mono', monospace; }
+  .ref-badge { font-family: 'DM Mono', monospace; font-size: 0.75rem; background: rgba(107,92,231,0.15); color: #a09cf0; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(107,92,231,0.25); }
+  .chip { font-size: 0.72rem; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+  .chip-disp { background: rgba(0,229,160,0.1); color: var(--accent); }
+  .chip-res { background: rgba(107,92,231,0.15); color: #a09cf0; }
+  .chip-vend { background: rgba(255,68,102,0.1); color: var(--loss); }
+
+  .action-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; transition: all 0.15s; font-family: 'Syne', sans-serif; }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.del:hover { border-color: var(--loss); color: var(--loss); }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.35; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal h3 { font-size: 1.05rem; margin-bottom: 22px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 28px; right: 28px; background: var(--accent); color: #000; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 300; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: var(--loss); color: #fff; }
+
+  /* VENTA PANEL */
+  .search-ref { display: flex; gap: 10px; }
+  .search-ref input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; font-family: 'Syne', sans-serif; outline: none; }
+  .search-ref input:focus { border-color: var(--accent); }
+  .item-preview { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin: 16px 0; }
+  .item-preview .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .item-preview .row:last-child { border-bottom: none; }
+  .item-preview .k { font-size: 0.78rem; color: var(--muted); }
+  .item-preview .v { font-family: 'DM Mono', monospace; font-size: 0.88rem; }
+
+  /* STATS GRID */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; }
+  .stat-card .label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .stat-card .val { font-family: 'DM Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+
+  footer { border-top: 1px solid var(--border); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 0.78rem; font-family: 'DM Mono', monospace; margin-top: 48px; }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .main { padding: 20px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid .span-3 { grid-column: span 2; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .calc-preview { grid-template-columns: 1fr 1fr; }
+    footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+  @media (max-width: 520px) {
+    .form-grid, .form-grid-2 { grid-template-columns: 1fr; }
+    .form-grid .span-2, .form-grid .span-3 { grid-column: span 1; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .calc-preview { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">i<span>Stock</span></div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">📦 Stock</a>
+    <a href="admin.html" class="nav-link active">⚙️ Admin</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">Panel de Administración</div>
+    <div class="page-sub">Registra compras, ventas y gestiona el inventario completo</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('compra', this)">📥 Registrar Compra</button>
+    <button class="tab" onclick="switchTab('venta', this)">💸 Registrar Venta</button>
+    <button class="tab" onclick="switchTab('inventario', this)">📋 Gestionar Inventario</button>
+    <button class="tab" onclick="switchTab('reportes', this)">📊 Reportes</button>
+  </div>
+
+  <!-- ── TAB: COMPRA ─────────────────────────────────────────────────────────── -->
+  <div class="tab-panel active" id="tab-compra">
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-icon icon-green">📥</div>
+        <div>
+          <div class="form-card-title">Nueva Compra / Ingreso de Inventario</div>
+        </div>
+      </div>
+      <div class="form-card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Referencia Interna *</label>
+            <input type="text" id="c-ref" placeholder="Ej: IP15PM-007" oninput="autoRef()">
+            <span class="hint">Identificador único del equipo</span>
+          </div>
+          <div class="form-group">
+            <label>Modelo *</label>
+            <select id="c-modelo" onchange="updateModeloSel()">
+              <option value="">Seleccionar...</option>
+              <option>iPhone 15 Pro Max</option>
+              <option>iPhone 15 Pro</option>
+              <option>iPhone 15 Plus</option>
+              <option>iPhone 15</option>
+              <option>iPhone 14 Pro Max</option>
+              <option>iPhone 14 Pro</option>
+              <option>iPhone 14 Plus</option>
+              <option>iPhone 14</option>
+              <option>iPhone 13 Pro Max</option>
+              <option>iPhone 13 Pro</option>
+              <option>iPhone 13</option>
+              <option>iPhone 13 Mini</option>
+              <option>iPhone 12 Pro Max</option>
+              <option>iPhone 12</option>
+              <option value="_otro">Otro (escribir)</option>
+            </select>
+          </div>
+          <div class="form-group" id="modelo-custom-wrap" style="display:none;">
+            <label>Modelo personalizado</label>
+            <input type="text" id="c-modelo-custom" placeholder="Ej: iPhone SE 3ra Gen">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <select id="c-color">
+              <option value="">–</option>
+              <option>Negro</option>
+              <option>Blanco</option>
+              <option>Azul</option>
+              <option>Rojo</option>
+              <option>Morado</option>
+              <option>Verde</option>
+              <option>Amarillo</option>
+              <option>Titanio Negro</option>
+              <option>Titanio Blanco</option>
+              <option>Titanio Natural</option>
+              <option>Titanio Azul</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Almacenamiento</label>
+            <select id="c-storage">
+              <option value="">–</option>
+              <option>64GB</option>
+              <option>128GB</option>
+              <option>256GB</option>
+              <option>512GB</option>
+              <option>1TB</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Condición</label>
+            <select id="c-condicion">
+              <option>Nuevo</option>
+              <option>Como nuevo</option>
+              <option>Muy buen estado</option>
+              <option>Buen estado</option>
+              <option>Aceptable</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Costo USD (eBay)</label>
+            <input type="number" id="c-usd" placeholder="950" min="0" step="0.01" oninput="calcCosto()">
+          </div>
+          <div class="form-group">
+            <label>TRM (COP/USD)</label>
+            <input type="number" id="c-trm" placeholder="4200" min="1" step="1" value="4200" oninput="calcCosto()">
+          </div>
+          <div class="form-group">
+            <label>Costo adicional COP</label>
+            <input type="number" id="c-extras" placeholder="Env, impuestos..." min="0" oninput="calcCosto()">
+            <span class="hint">Envío, aranceles, etc.</span>
+          </div>
+          <div class="form-group">
+            <label>Precio Venta Objetivo COP</label>
+            <input type="number" id="c-pventa" placeholder="5200000" min="0" oninput="calcCosto()">
+          </div>
+          <div class="form-group">
+            <label>Proveedor / Fuente</label>
+            <input type="text" id="c-proveedor" placeholder="eBay seller ID, etc.">
+          </div>
+          <div class="form-group">
+            <label>Fecha de compra</label>
+            <input type="date" id="c-fecha">
+          </div>
+          <div class="form-group span-3">
+            <label>Notas</label>
+            <textarea id="c-notas" placeholder="IMEI, número de orden eBay, observaciones..."></textarea>
+          </div>
+        </div>
+
+        <div class="calc-preview">
+          <div class="calc-item">
+            <label>Costo Total COP</label>
+            <div class="val val-muted" id="preview-costo">–</div>
+          </div>
+          <div class="calc-item">
+            <label>Margen estimado</label>
+            <div class="val val-green" id="preview-margen">–</div>
+          </div>
+          <div class="calc-item">
+            <label>Utilidad bruta</label>
+            <div class="val val-green" id="preview-util">–</div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="clearCompra()">Limpiar</button>
+          <button class="btn btn-accent" onclick="saveCompra()">✓ Registrar Compra</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: VENTA ─────────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-venta">
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-icon icon-purple">💸</div>
+        <div>
+          <div class="form-card-title">Registrar Venta</div>
+        </div>
+      </div>
+      <div class="form-card-body">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Buscar por Referencia o Modelo</label>
+          <div class="search-ref">
+            <input type="text" id="v-search" placeholder="Ej: IP15PM-001 o iPhone 15..." oninput="searchItem()">
+          </div>
+        </div>
+
+        <div id="v-results" style="display:none;">
+          <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;">Equipos disponibles</label>
+          <div id="v-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;"></div>
+        </div>
+
+        <div id="v-selected" style="display:none;">
+          <div class="item-preview" id="v-item-preview"></div>
+          <div class="form-grid-2" style="margin-top:16px;">
+            <div class="form-group">
+              <label>Precio de Venta Real COP *</label>
+              <input type="number" id="v-precio" placeholder="5200000" oninput="calcVenta()">
+            </div>
+            <div class="form-group">
+              <label>Fecha de Venta</label>
+              <input type="date" id="v-fecha">
+            </div>
+            <div class="form-group">
+              <label>Comprador</label>
+              <input type="text" id="v-comprador" placeholder="Nombre o alias">
+            </div>
+            <div class="form-group">
+              <label>Método de pago</label>
+              <select id="v-metodo">
+                <option>Efectivo</option>
+                <option>Nequi</option>
+                <option>Daviplata</option>
+                <option>Transferencia</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="form-group span-2">
+              <label>Notas de venta</label>
+              <textarea id="v-notas" placeholder="Referencia de pago, observaciones..."></textarea>
+            </div>
+          </div>
+
+          <div class="calc-preview" style="margin-top:16px;">
+            <div class="calc-item">
+              <label>Costo del equipo</label>
+              <div class="val val-muted" id="v-preview-costo">–</div>
+            </div>
+            <div class="calc-item">
+              <label>Utilidad bruta</label>
+              <div class="val val-green" id="v-preview-util">–</div>
+            </div>
+            <div class="calc-item">
+              <label>Margen</label>
+              <div class="val val-green" id="v-preview-margen">–</div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-outline" onclick="clearVenta()">Cancelar</button>
+            <button class="btn btn-purple" onclick="saveVenta()">✓ Confirmar Venta</button>
+          </div>
+        </div>
+
+        <div id="v-empty" style="text-align:center;padding:40px 0;color:var(--muted);">
+          <div style="font-size:2.5rem;opacity:0.3;margin-bottom:8px;">🔍</div>
+          <p style="font-size:0.88rem;">Busca un equipo para registrar su venta</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: INVENTARIO ────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-inventario">
+    <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+      <input type="text" id="inv-search" placeholder="🔍  Buscar en inventario..." oninput="renderInvTable()"
+        style="flex:1;min-width:220px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-size:0.88rem;font-family:'Syne',sans-serif;outline:none;">
+      <select id="inv-filter" onchange="renderInvTable()" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:0.85rem;font-family:'Syne',sans-serif;outline:none;">
+        <option value="">Todos</option>
+        <option value="Disponible">Disponible</option>
+        <option value="Reservado">Reservado</option>
+        <option value="Vendido">Vendido</option>
+      </select>
+      <button class="btn btn-danger" onclick="confirmClearAll()">🗑 Limpiar todo</button>
+    </div>
+
+    <div class="list-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ref</th>
+            <th>Modelo</th>
+            <th>Color</th>
+            <th>Costo COP</th>
+            <th>P. Venta</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="inv-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: REPORTES ──────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-reportes">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total registros</div>
+        <div class="val" id="r-total" style="color:var(--text)">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">En stock</div>
+        <div class="val" id="r-stock" style="color:var(--accent)">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Vendidos</div>
+        <div class="val" id="r-vendidos" style="color:var(--accent2)">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Ingresos totales</div>
+        <div class="val" id="r-ingresos" style="color:var(--accent);font-size:1.1rem">$0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Costo total vendidos</div>
+        <div class="val" id="r-costos" style="color:var(--warn);font-size:1.1rem">$0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Utilidad bruta</div>
+        <div class="val" id="r-utilidad" style="color:var(--accent);font-size:1.1rem">$0</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-accent" onclick="exportCSV('semana')">⬇ Reporte Semanal (CSV)</button>
+      <button class="btn btn-outline" onclick="exportCSV('mes')">⬇ Reporte Mensual (CSV)</button>
+      <button class="btn btn-outline" onclick="exportCSV('todo')">⬇ Exportar Todo (CSV)</button>
+      <button class="btn btn-outline" onclick="copyJSON()">📋 Copia de seguridad JSON</button>
+      <label class="btn btn-outline" style="cursor:pointer;">
+        📁 Restaurar backup
+        <input type="file" accept=".json" style="display:none" onchange="restoreJSON(event)">
+      </label>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>iStock Admin Panel</span>
+  <span id="last-update">–</span>
+</footer>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ Editar Ítem</h3>
+    <input type="hidden" id="edit-idx">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Referencia</label>
+        <input type="text" id="edit-ref">
+      </div>
+      <div class="form-group span-2">
+        <label>Modelo</label>
+        <input type="text" id="edit-modelo">
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <input type="text" id="edit-color">
+      </div>
+      <div class="form-group">
+        <label>Almacenamiento</label>
+        <input type="text" id="edit-storage">
+      </div>
+      <div class="form-group">
+        <label>Condición</label>
+        <select id="edit-condicion">
+          <option>Nuevo</option><option>Como nuevo</option><option>Muy buen estado</option><option>Buen estado</option><option>Aceptable</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Costo USD</label>
+        <input type="number" id="edit-usd">
+      </div>
+      <div class="form-group">
+        <label>Costo COP</label>
+        <input type="number" id="edit-cop">
+      </div>
+      <div class="form-group">
+        <label>Precio Venta COP</label>
+        <input type="number" id="edit-pventa">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="edit-estado">
+          <option>Disponible</option><option>Reservado</option><option>Vendido</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="edit-fecha">
+      </div>
+      <div class="form-group span-3">
+        <label>Notas</label>
+        <textarea id="edit-notas"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+function getData() {
+  try { return JSON.parse(localStorage.getItem('istock_data') || '[]'); } catch { return []; }
+}
+function saveData(d) {
+  localStorage.setItem('istock_data', JSON.stringify(d));
+  localStorage.setItem('istock_update', new Date().toISOString());
+  updateFooter();
+}
+function genId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+function fmtCOP(n) {
+  if (!n && n !== 0) return '–';
+  return '$' + Number(n).toLocaleString('es-CO');
+}
+function updateFooter() {
+  const lu = localStorage.getItem('istock_update');
+  if (lu) document.getElementById('last-update').textContent = 'Guardado: ' + new Date(lu).toLocaleString('es-CO');
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'inventario') renderInvTable();
+  if (name === 'reportes') renderReportes();
+}
+
+// ─── COMPRA ───────────────────────────────────────────────────────────────────
+function updateModeloSel() {
+  const v = document.getElementById('c-modelo').value;
+  document.getElementById('modelo-custom-wrap').style.display = v === '_otro' ? '' : 'none';
+}
+function calcCosto() {
+  const usd = parseFloat(document.getElementById('c-usd').value) || 0;
+  const trm = parseFloat(document.getElementById('c-trm').value) || 4200;
+  const ext = parseFloat(document.getElementById('c-extras').value) || 0;
+  const pv  = parseFloat(document.getElementById('c-pventa').value) || 0;
+  const costoTotal = usd * trm + ext;
+  const util = pv - costoTotal;
+  const margen = costoTotal > 0 && pv > 0 ? (util / pv * 100).toFixed(1) : null;
+  document.getElementById('preview-costo').textContent = costoTotal > 0 ? fmtCOP(Math.round(costoTotal)) : '–';
+  document.getElementById('preview-util').textContent = pv > 0 ? fmtCOP(Math.round(util)) : '–';
+  document.getElementById('preview-margen').textContent = margen !== null ? margen + '%' : '–';
+}
+function autoRef() { /* user types manually */ }
+
+function saveCompra() {
+  const modelo = document.getElementById('c-modelo').value === '_otro'
+    ? document.getElementById('c-modelo-custom').value.trim()
+    : document.getElementById('c-modelo').value;
+  const ref = document.getElementById('c-ref').value.trim();
+  const usd = parseFloat(document.getElementById('c-usd').value) || 0;
+  const trm = parseFloat(document.getElementById('c-trm').value) || 4200;
+  const ext = parseFloat(document.getElementById('c-extras').value) || 0;
+  const copTotal = Math.round(usd * trm + ext);
+
+  if (!modelo) { showToast('Selecciona un modelo', true); return; }
+  if (!ref) { showToast('Ingresa una referencia', true); return; }
+
+  const data = getData();
+  if (data.find(d => d.referencia === ref)) { showToast('Referencia ya existe', true); return; }
+
+  const item = {
+    id: genId(), referencia: ref, modelo,
+    color: document.getElementById('c-color').value,
+    almacenamiento: document.getElementById('c-storage').value,
+    condicion: document.getElementById('c-condicion').value,
+    costo_usd: usd, trm, costo_extras: ext, costo_cop: copTotal,
+    precio_venta: parseFloat(document.getElementById('c-pventa').value) || 0,
+    proveedor: document.getElementById('c-proveedor').value,
+    estado: 'Disponible',
+    fecha: document.getElementById('c-fecha').value || new Date().toISOString().slice(0,10),
+    notas: document.getElementById('c-notas').value,
+    fecha_venta: null, comprador: null
+  };
+  data.push(item);
+  saveData(data);
+  clearCompra();
+  showToast('✅ ' + modelo + ' registrado');
+}
+
+function clearCompra() {
+  ['c-ref','c-modelo-custom','c-usd','c-extras','c-pventa','c-proveedor','c-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('c-modelo').value = '';
+  document.getElementById('c-fecha').value = '';
+  document.getElementById('c-trm').value = '4200';
+  document.getElementById('modelo-custom-wrap').style.display = 'none';
+  calcCosto();
+}
+
+// ─── VENTA ────────────────────────────────────────────────────────────────────
+let selectedItemId = null;
+
+function searchItem() {
+  const q = document.getElementById('v-search').value.toLowerCase();
+  if (!q) {
+    document.getElementById('v-results').style.display = 'none';
+    document.getElementById('v-selected').style.display = 'none';
+    document.getElementById('v-empty').style.display = '';
+    selectedItemId = null;
+    return;
+  }
+  const data = getData().filter(d => d.estado === 'Disponible' || d.estado === 'Reservado');
+  const matches = data.filter(d =>
+    (d.referencia||'').toLowerCase().includes(q) ||
+    (d.modelo||'').toLowerCase().includes(q) ||
+    (d.color||'').toLowerCase().includes(q)
+  );
+
+  if (!matches.length) {
+    document.getElementById('v-results').style.display = 'none';
+    document.getElementById('v-empty').style.display = '';
+    document.getElementById('v-selected').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('v-empty').style.display = 'none';
+  document.getElementById('v-results').style.display = '';
+  document.getElementById('v-selected').style.display = 'none';
+
+  document.getElementById('v-results-list').innerHTML = matches.map(d => `
+    <div onclick="selectItem('${d.id}')" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div>
+        <span class="ref-badge">${d.referencia}</span>
+        <strong style="margin-left:10px;">${d.modelo}</strong>
+        <span style="color:var(--muted);font-size:0.8rem;margin-left:8px;">${d.color||''} ${d.almacenamiento||''}</span>
+      </div>
+      <span style="font-family:'DM Mono',monospace;color:var(--accent);font-size:0.9rem;">${fmtCOP(d.costo_cop)}</span>
+    </div>
+  `).join('');
+}
+
+function selectItem(id) {
+  const data = getData();
+  const item = data.find(d => d.id === id);
+  if (!item) return;
+  selectedItemId = id;
+
+  document.getElementById('v-results').style.display = 'none';
+  document.getElementById('v-empty').style.display = 'none';
+  document.getElementById('v-selected').style.display = '';
+  document.getElementById('v-fecha').value = new Date().toISOString().slice(0,10);
+
+  document.getElementById('v-item-preview').innerHTML = `
+    <div class="row"><span class="k">Referencia</span><span class="v ref-badge">${item.referencia}</span></div>
+    <div class="row"><span class="k">Modelo</span><span class="v">${item.modelo}</span></div>
+    <div class="row"><span class="k">Color / Almac.</span><span class="v">${item.color||'–'} ${item.almacenamiento ? '/ '+item.almacenamiento : ''}</span></div>
+    <div class="row"><span class="k">Condición</span><span class="v">${item.condicion||'–'}</span></div>
+    <div class="row"><span class="k">Costo COP</span><span class="v" style="color:var(--warn)">${fmtCOP(item.costo_cop)}</span></div>
+    <div class="row"><span class="k">Precio objetivo</span><span class="v" style="color:var(--accent)">${item.precio_venta ? fmtCOP(item.precio_venta) : '–'}</span></div>
+  `;
+  if (item.precio_venta) document.getElementById('v-precio').value = item.precio_venta;
+  calcVenta();
+}
+
+function calcVenta() {
+  if (!selectedItemId) return;
+  const data = getData();
+  const item = data.find(d => d.id === selectedItemId);
+  const pv = parseFloat(document.getElementById('v-precio').value) || 0;
+  const util = pv - (item.costo_cop || 0);
+  const margen = pv > 0 ? (util / pv * 100).toFixed(1) : null;
+  document.getElementById('v-preview-costo').textContent = fmtCOP(item.costo_cop);
+  document.getElementById('v-preview-util').textContent = pv ? fmtCOP(Math.round(util)) : '–';
+  document.getElementById('v-preview-margen').textContent = margen !== null ? margen + '%' : '–';
+}
+
+function saveVenta() {
+  if (!selectedItemId) return;
+  const pv = parseFloat(document.getElementById('v-precio').value);
+  if (!pv || pv <= 0) { showToast('Ingresa el precio de venta', true); return; }
+  const data = getData();
+  const idx = data.findIndex(d => d.id === selectedItemId);
+  if (idx < 0) return;
+  data[idx].estado = 'Vendido';
+  data[idx].precio_venta = pv;
+  data[idx].fecha_venta = document.getElementById('v-fecha').value;
+  data[idx].comprador = document.getElementById('v-comprador').value;
+  data[idx].metodo_pago = document.getElementById('v-metodo').value;
+  data[idx].notas_venta = document.getElementById('v-notas').value;
+  saveData(data);
+  showToast('✅ Venta registrada — ' + fmtCOP(pv));
+  clearVenta();
+}
+
+function clearVenta() {
+  selectedItemId = null;
+  document.getElementById('v-search').value = '';
+  document.getElementById('v-precio').value = '';
+  document.getElementById('v-comprador').value = '';
+  document.getElementById('v-notas').value = '';
+  document.getElementById('v-results').style.display = 'none';
+  document.getElementById('v-selected').style.display = 'none';
+  document.getElementById('v-empty').style.display = '';
+}
+
+// ─── INVENTARIO TABLE ─────────────────────────────────────────────────────────
+function renderInvTable() {
+  let data = getData();
+  const q = document.getElementById('inv-search').value.toLowerCase();
+  const f = document.getElementById('inv-filter').value;
+  if (q) data = data.filter(d =>
+    (d.referencia||'').toLowerCase().includes(q) ||
+    (d.modelo||'').toLowerCase().includes(q));
+  if (f) data = data.filter(d => d.estado === f);
+
+  const tbody = document.getElementById('inv-table-body');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>Sin registros</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((d, i) => {
+    const chipCls = d.estado === 'Disponible' ? 'chip-disp' : d.estado === 'Reservado' ? 'chip-res' : 'chip-vend';
+    const realIdx = getData().findIndex(x => x.id === d.id);
+    return `<tr>
+      <td><span class="ref-badge">${d.referencia||'–'}</span></td>
+      <td>${d.modelo||'–'}</td>
+      <td style="color:var(--muted)">${d.color||'–'} ${d.almacenamiento||''}</td>
+      <td class="mono">${fmtCOP(d.costo_cop)}</td>
+      <td class="mono">${d.precio_venta ? fmtCOP(d.precio_venta) : '<span style="color:var(--muted)">–</span>'}</td>
+      <td><span class="chip ${chipCls}">${d.estado||'–'}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem;">${d.fecha ? new Date(d.fecha).toLocaleDateString('es-CO') : '–'}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="action-btn" onclick="openEdit('${d.id}')">✏️</button>
+        <button class="action-btn del" onclick="deleteItem('${d.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteItem(id) {
+  if (!confirm('¿Eliminar este ítem?')) return;
+  const data = getData().filter(d => d.id !== id);
+  saveData(data);
+  renderInvTable();
+  showToast('🗑 Eliminado');
+}
+
+function confirmClearAll() {
+  if (!confirm('⚠️ ¿Borrar TODO el inventario? Esta acción no se puede deshacer.')) return;
+  saveData([]);
+  renderInvTable();
+  showToast('Inventario borrado');
+}
+
+// ─── EDIT MODAL ───────────────────────────────────────────────────────────────
+function openEdit(id) {
+  const data = getData();
+  const item = data.find(d => d.id === id);
+  if (!item) return;
+  document.getElementById('edit-idx').value = id;
+  document.getElementById('edit-ref').value = item.referencia || '';
+  document.getElementById('edit-modelo').value = item.modelo || '';
+  document.getElementById('edit-color').value = item.color || '';
+  document.getElementById('edit-storage').value = item.almacenamiento || '';
+  document.getElementById('edit-condicion').value = item.condicion || 'Nuevo';
+  document.getElementById('edit-usd').value = item.costo_usd || '';
+  document.getElementById('edit-cop').value = item.costo_cop || '';
+  document.getElementById('edit-pventa').value = item.precio_venta || '';
+  document.getElementById('edit-estado').value = item.estado || 'Disponible';
+  document.getElementById('edit-fecha').value = item.fecha || '';
+  document.getElementById('edit-notas').value = item.notas || '';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
+function saveEdit() {
+  const id = document.getElementById('edit-idx').value;
+  const data = getData();
+  const idx = data.findIndex(d => d.id === id);
+  if (idx < 0) return;
+  data[idx] = { ...data[idx],
+    referencia: document.getElementById('edit-ref').value,
+    modelo: document.getElementById('edit-modelo').value,
+    color: document.getElementById('edit-color').value,
+    almacenamiento: document.getElementById('edit-storage').value,
+    condicion: document.getElementById('edit-condicion').value,
+    costo_usd: parseFloat(document.getElementById('edit-usd').value)||0,
+    costo_cop: parseFloat(document.getElementById('edit-cop').value)||0,
+    precio_venta: parseFloat(document.getElementById('edit-pventa').value)||0,
+    estado: document.getElementById('edit-estado').value,
+    fecha: document.getElementById('edit-fecha').value,
+    notas: document.getElementById('edit-notas').value,
+  };
+  saveData(data);
+  closeModal();
+  renderInvTable();
+  showToast('✅ Cambios guardados');
+}
+
+// ─── REPORTES ─────────────────────────────────────────────────────────────────
+function renderReportes() {
+  const data = getData();
+  const vendidos = data.filter(d => d.estado === 'Vendido');
+  const disponibles = data.filter(d => d.estado === 'Disponible');
+  const ingresos = vendidos.reduce((s,d) => s + (Number(d.precio_venta)||0), 0);
+  const costos = vendidos.reduce((s,d) => s + (Number(d.costo_cop)||0), 0);
+  document.getElementById('r-total').textContent = data.length;
+  document.getElementById('r-stock').textContent = disponibles.length;
+  document.getElementById('r-vendidos').textContent = vendidos.length;
+  document.getElementById('r-ingresos').textContent = fmtCOP(ingresos);
+  document.getElementById('r-costos').textContent = fmtCOP(costos);
+  document.getElementById('r-utilidad').textContent = fmtCOP(ingresos - costos);
+}
+
+function exportCSV(rango) {
+  let data = getData();
+  const now = new Date();
+  if (rango === 'semana') {
+    const w = new Date(now); w.setDate(now.getDate() - 7);
+    data = data.filter(d => new Date(d.fecha_venta || d.fecha) >= w);
+  } else if (rango === 'mes') {
+    data = data.filter(d => {
+      const f = new Date(d.fecha_venta || d.fecha);
+      return f.getMonth() === now.getMonth() && f.getFullYear() === now.getFullYear();
+    });
+  }
+
+  const vendidos = data.filter(d => d.estado === 'Vendido');
+  const disponibles = data.filter(d => d.estado === 'Disponible');
+  const totalIng = vendidos.reduce((s,d) => s + (Number(d.precio_venta)||0), 0);
+  const totalCosto = vendidos.reduce((s,d) => s + (Number(d.costo_cop)||0), 0);
+
+  const headers = ['Referencia','Modelo','Color','Almacenamiento','Condicion','Costo_USD','Costo_COP','Precio_Venta_COP','Utilidad_COP','Margen_%','Estado','Fecha_Ingreso','Fecha_Venta','Comprador','Metodo_Pago','Notas'];
+  const rows = data.map(d => {
+    const util = (d.precio_venta||0) - (d.costo_cop||0);
+    const margen = d.precio_venta && d.costo_cop ? (util/d.precio_venta*100).toFixed(1)+'%' : '';
+    return [d.referencia,d.modelo,d.color,d.almacenamiento,d.condicion,d.costo_usd,d.costo_cop,d.precio_venta||'',d.precio_venta?util:'',margen,d.estado,d.fecha,d.fecha_venta||'',d.comprador||'',d.metodo_pago||'',d.notas||''];
+  });
+
+  const sep = Array(headers.length).fill('');
+  const sumRows = [
+    sep,
+    ['=== RESUMEN ==='],
+    ['Rango', rango === 'semana' ? 'Últimos 7 días' : rango === 'mes' ? 'Mes actual' : 'Todo'],
+    ['Generado', now.toLocaleString('es-CO')],
+    sep,
+    ['Unidades en stock', disponibles.length],
+    ['Unidades vendidas', vendidos.length],
+    ['Ingresos COP', totalIng],
+    ['Costo mercancia vendida COP', totalCosto],
+    ['Utilidad bruta COP', totalIng - totalCosto],
+    ['Margen bruto', totalIng > 0 ? ((totalIng-totalCosto)/totalIng*100).toFixed(1)+'%' : '0%'],
+  ];
+
+  const allRows = [headers, ...rows, ...sumRows];
+  const csv = allRows.map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `istock_${rango}_${now.toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✅ CSV descargado');
+}
+
+function copyJSON() {
+  const json = JSON.stringify(getData(), null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `istock_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('✅ Backup descargado');
+}
+
+function restoreJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!Array.isArray(d)) throw new Error('Formato inválido');
+      if (!confirm(`¿Restaurar ${d.length} registros? Se reemplazará el inventario actual.`)) return;
+      saveData(d);
+      renderInvTable();
+      renderReportes();
+      showToast('✅ Backup restaurado — ' + d.length + ' registros');
+    } catch { showToast('❌ Archivo inválido', true); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+updateFooter();
+document.getElementById('c-fecha').value = new Date().toISOString().slice(0,10);
+// Seed if empty
+if (!getData().length) {
+  const demo = [
+    { id: genId(), referencia: 'IP15PM-001', modelo: 'iPhone 15 Pro Max', color: 'Titanio Negro', almacenamiento: '256GB', condicion: 'Nuevo', costo_usd: 950, trm: 4200, costo_extras: 0, costo_cop: 3990000, precio_venta: 5200000, proveedor: 'ebay_seller1', estado: 'Disponible', fecha: '2024-04-15', notas: '' },
+    { id: genId(), referencia: 'IP15P-002', modelo: 'iPhone 15 Pro', color: 'Titanio Blanco', almacenamiento: '128GB', condicion: 'Nuevo', costo_usd: 830, trm: 4200, costo_extras: 0, costo_cop: 3490000, precio_venta: 4600000, proveedor: 'ebay_seller1', estado: 'Vendido', fecha: '2024-04-18', fecha_venta: '2024-04-22', comprador: 'Juan P.', metodo_pago: 'Nequi', notas: 'Cliente referido' },
+    { id: genId(), referencia: 'IP14-003', modelo: 'iPhone 14', color: 'Azul', almacenamiento: '128GB', condicion: 'Como nuevo', costo_usd: 620, trm: 4200, costo_extras: 50000, costo_cop: 2654000, precio_venta: 3400000, proveedor: 'ebay_seller2', estado: 'Disponible', fecha: '2024-04-20', notas: '' },
+    { id: genId(), referencia: 'IP15-004', modelo: 'iPhone 15', color: 'Negro', almacenamiento: '256GB', condicion: 'Nuevo', costo_usd: 720, trm: 4200, costo_extras: 0, costo_cop: 3024000, precio_venta: 4100000, proveedor: 'ebay_seller3', estado: 'Reservado', fecha: '2024-04-22', notas: 'Apartado' },
+    { id: genId(), referencia: 'IP14PM-005', modelo: 'iPhone 14 Pro Max', color: 'Morado Oscuro', almacenamiento: '512GB', condicion: 'Nuevo', costo_usd: 890, trm: 4200, costo_extras: 0, costo_cop: 3738000, precio_venta: 5000000, proveedor: 'ebay_seller1', estado: 'Vendido', fecha: '2024-04-25', fecha_venta: '2024-04-28', comprador: 'Maria G.', metodo_pago: 'Efectivo', notas: '' },
+  ];
+  saveData(demo);
+}
+</script>
+</body>
+</html>
